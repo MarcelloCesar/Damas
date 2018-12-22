@@ -1,0 +1,99 @@
+<html>
+    <head>
+        <style>
+            .superior-bar li{
+                display: inline;
+                padding: 15px;
+                margin: 5px;
+                border: 2px;
+                border-color: black;
+                border-style: solid;
+
+            }
+
+            div {
+                float: left;   
+                width: 100%;  
+            }
+
+            #barra-menu {
+                border: 2px;
+                border-color: black;
+                border-style: solid;
+            }
+
+            div .house {
+                border: 2px;
+                border-color: black;
+                border-style: solid;
+                width: 25%;
+                height: 25%;
+                float: left;
+            }
+
+            div .JogoVelha{
+                float:left;
+                padding:4%;
+            }
+
+            .peca{
+                font-size: 50px;
+                font-weight: bold;
+                text-align: center;
+            }
+
+        </style>
+
+        <script type="text/javascript">
+            var casasOcupadas;
+            function carregarJogoVelha(){
+                casasOcupadas = [];
+                content = document.getElementById('content');
+                content.innerHTML = "<div class='JogoVelha' id='JogoVelha'></div>";     
+                
+                for(var i=1; i<4; i++){
+                    for(var j='a'; j<'d'; j = String.fromCharCode(j.charCodeAt() + 1) ){
+                        document.getElementById('JogoVelha').innerHTML += 
+                            "<div onclick='placeElement(this.id)' class='house' id='" + j + i + "'></div>";                                            
+                    }                    
+                }           
+            }       
+            
+            var peca = "X";
+            function placeElement(id){
+                if (fimJogo()){
+                    alert('Fim de jogo');
+                }
+
+                if(casasOcupadas.indexOf(id) == -1){
+                    document.getElementById(id).innerHTML = "<p class='peca'>"+peca+"</p>";
+                    peca = peca == 'X' ? 'O' : 'X';
+                    casasOcupadas.push(id);
+                }
+            }
+
+            function fimJogo(){
+                for(var i=1; i<4; i++){
+                    if(){
+
+                    }
+                }
+            }
+
+        </script>
+    </head>
+    <body>        
+        <div style="width: 100%">
+            <div class="barra-menu">
+                <div>
+                    <ul class="superior-bar">
+                        <li onclick="carregarJogoVelha()">Jogo da Velha</li>
+                        <li>Xadrez</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="content">
+            </div>
+        </div>
+    </body>
+</html>
