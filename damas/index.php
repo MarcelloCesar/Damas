@@ -1,5 +1,7 @@
 <html>
     <head>       
+        <script type="text/javascript" src="util.js"></script>
+        <script type="text/javascript" src="jquery.js"></script>
         <title>Jogo de Damas</title>
         <style>
             .DarkStage {
@@ -62,7 +64,8 @@
 
     <script type="text/javascript">      
         var lastSelectedPiece = null;
-        var nextMove = 'white';
+        var nextMove    = 'white';
+        var itsGonnaEat = [];
 
         function buildStage(){            
             stage = document.getElementById('board');                       
@@ -74,7 +77,7 @@
             for (var line = 10; line>0; line--){
                 for (var column = 'a'; column != 'k'; column = String.fromCharCode(column.charCodeAt(0) + 1)){
                     var div = document.createElement("div");
-                    var stageId = column + line;   
+                    var stageId = column + "_" + line;   
                     div.id = stageId;
                     div.addEventListener("click", stageClick);
                     div.classList.add("stage"); 
@@ -82,7 +85,7 @@
                     if (DarkStage){
                         if(line < 5){
                             piece = document.createElement("div");
-                            piece.id = "whitePiece" + whitePieceId++;
+                            piece.id = "whitePiece_" + whitePieceId++;
                             piece.classList.add("whitePiece");
                             piece.classList.add("piece");
                             piece.style.cursor = "pointer";
@@ -90,7 +93,7 @@
                             div.appendChild(piece);
                         } else if (line > 6){
                             piece = document.createElement("div");
-                            piece.id = "blackPiece" + blackPieceId--;
+                            piece.id = "blackPiece_" + blackPieceId--;
                             piece.classList.add("blackPiece");
                             piece.classList.add("piece");
                             piece.style.cursor = "pointer";
@@ -108,8 +111,45 @@
             }
         }
 
-        function pieceClick(event){            
-            piece = event.target;
+        function boardToJson(){
+            var JSONMessage = '{';
+            var boardObjs   = [];
+
+            var stages = document.getElementsByClassName('stage');
+            for(var i=0; i<stages.length; i++){
+                var stageObj = {};
+                stageObj.stage  = stages[i].id;
+                if (stages[i].childNodes[0] != undefined){
+                    stageObj.piece = {}
+                    stageObj.piece.id      = stages[i].childNodes[0].id;
+                    stageObj.piece.color   = stages[i].childNodes[0].classList.contains("blackPiece") ? 'black' : 'white';
+                } else {
+                    stageObj.piece  = '';
+                }   
+                boardObjs.push(stageObj);
+            }
+            
+            return JSON.stringify(boardObjs);            
+        }
+
+        function pieceClick(event){
+            var stringRequest = "action=getPossibleMoves&board=" + boardToJson() + "&stage="+event.target.parentElement.id;
+            post("damas.php", stringRequest, function (response){                
+                response = JSON.parse(response.responseText);
+                cleanHighlightedStages();
+                if(response.type == 'exception'){
+                    alert('Ocorreu o seguinte erro ao tentar selecionar a peça: ' + response.message);
+                } else {                   
+                    highlightStages(response.message);
+                    lastSelectedPiece = event.target;
+                    itsGonnaEat       = response.itsGonnaEat;
+                    console.log(itsGonnaEat)      ;             
+                }               
+            });
+        }
+
+        function piecesClick(event){            
+            var piece = event.target;
             stage = document.getElementById(piece.id).parentElement;
             stageLetter = stage.id.slice(0, 1);
             stageNumber = stage.id.slice(1);
@@ -133,6 +173,16 @@
             avaliaPosicao(inicialPossibleMoves);                       
             lastSelectedPiece = piece;
         }   
+
+        function highlightStages(stages){
+            for(var i=0; i<stages.length; i++){                
+                try{
+                    document.getElementById(stages[i]).classList.add('highlightedStage');
+                }catch(Exception){
+                    continue;
+                }
+            }
+        }
 
         function avaliaPosicao(inicialPossibleMoves){
             for(var i=0; i<inicialPossibleMoves.length; i++){
@@ -185,8 +235,15 @@
                    (lastSelectedPiece.classList.contains('blackPiece') && nextMove == 'black')){
                     stageSender.appendChild(document.getElementById(lastSelectedPiece.id));
 
+                    for(var i=0; i<itsGonnaEat.length; i++){
+                        if(itsGonnaEat[i][0] == stageSender.id){
+                            document.getElementById(itsGonnaEat[i][1]).innerHTML ='';
+                        }
+                    }
+
                     cleanHighlightedStages();
                     lastSelectedPieceId = null;
+                    itsGonnaEat         = null;
                     nextMove = nextMove == 'white' ? 'black' : 'white';
                 }
             }
