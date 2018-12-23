@@ -65,7 +65,8 @@
     <script type="text/javascript">      
         var lastSelectedPiece = null;
         var nextMove    = 'white';
-        var itsGonnaEat = [];
+        var moves       = [];
+        var pvp         = false;
 
         function buildStage(){            
             stage = document.getElementById('board');                       
@@ -142,73 +143,17 @@
                 } else {                   
                     highlightStages(response.message);
                     lastSelectedPiece = event.target;
-                    itsGonnaEat       = response.itsGonnaEat;
-                    console.log(itsGonnaEat)      ;             
+                    moves             = response.message; 
                 }               
             });
         }
 
-        function piecesClick(event){            
-            var piece = event.target;
-            stage = document.getElementById(piece.id).parentElement;
-            stageLetter = stage.id.slice(0, 1);
-            stageNumber = stage.id.slice(1);
-
-            
-            console.log(stage.id)
-            
-            var inicialPossibleMoves = []
-            
-
-            cleanHighlightedStages();
-
-            if(piece.classList.contains("whitePiece")){
-                inicialPossibleMoves.push(String.fromCharCode(stageLetter.charCodeAt(0) - 1) + (parseInt(stageNumber) + 1))
-                inicialPossibleMoves.push(String.fromCharCode(stageLetter.charCodeAt(0) + 1) + (parseInt(stageNumber) + 1))
-            } else {
-                inicialPossibleMoves.push(String.fromCharCode(stageLetter.charCodeAt(0) - 1) + (parseInt(stageNumber) - 1))
-                inicialPossibleMoves.push(String.fromCharCode(stageLetter.charCodeAt(0) + 1) + (parseInt(stageNumber) - 1))
-            }            
-            console.log(inicialPossibleMoves);
-            avaliaPosicao(inicialPossibleMoves);                       
-            lastSelectedPiece = piece;
-        }   
-
         function highlightStages(stages){
             for(var i=0; i<stages.length; i++){                
                 try{
-                    document.getElementById(stages[i]).classList.add('highlightedStage');
+                    document.getElementById(stages[i][0]).classList.add('highlightedStage');
                 }catch(Exception){
                     continue;
-                }
-            }
-        }
-
-        function avaliaPosicao(inicialPossibleMoves){
-            for(var i=0; i<inicialPossibleMoves.length; i++){
-                var goToStage = document.getElementById(inicialPossibleMoves[i]);
-                try{
-                    var children  = goToStage.childNodes;
-                }catch(TypeError){
-                    continue;
-                }
-                var sameColorPieceExists  = false;
-                var opostColorPieceExists = false;
-                for(var j=0; j<children.length; j++){
-                    if (children[j].classList.contains(getColorClass(piece))){
-                        sameColorPieceExists = true;
-                        break;
-                    } else if (children[j].classList.contains(getOpostColorClass(piece))){
-                        opostColorPieceExists = true;
-                        break;
-                    }
-                }
-                
-                if(!sameColorPieceExists && !opostColorPieceExists){
-                    document.getElementById(inicialPossibleMoves[i]).classList.add('highlightedStage');
-                } else if (opostColorPieceExists){
-                    var stageToAvail = '';
-                    
                 }
             }
         }
@@ -235,9 +180,11 @@
                    (lastSelectedPiece.classList.contains('blackPiece') && nextMove == 'black')){
                     stageSender.appendChild(document.getElementById(lastSelectedPiece.id));
 
-                    for(var i=0; i<itsGonnaEat.length; i++){
-                        if(itsGonnaEat[i][0] == stageSender.id){
-                            document.getElementById(itsGonnaEat[i][1]).innerHTML ='';
+                    for(var i=0; i<moves.length; i++){
+                        if(moves[i][0] == stageSender.id){
+                            for(var j=0; j<moves[i][1].length; j++){       
+                                document.getElementById(moves[i][1][j]).innerHTML ='';
+                            }
                         }
                     }
 
@@ -245,8 +192,28 @@
                     lastSelectedPieceId = null;
                     itsGonnaEat         = null;
                     nextMove = nextMove == 'white' ? 'black' : 'white';
+                    if(!pvp && nextMove == 'black'){
+                        computerMove();
+                        nextMove = nextMove == 'white' ? 'black' : 'white';
+                    }
                 }
             }
+        }
+
+        function computerMove(){
+            var stringRequest = "action=computerMove&board=" + boardToJson(); 
+            post("damas.php", stringRequest, function(response){
+                response = JSON.parse(response.responseText);
+                var pieceToMove = document.getElementById(response.message[0]);
+                var newStage    = document.getElementById(response.message[1][0]);                
+                newStage.appendChild(pieceToMove);
+                lastSelectedPiece = pieceToMove;
+
+                for(var j=0; j<response.message[1][1].length; j++){       
+                    document.getElementById(response.message[1][1][j]).innerHTML ='';
+                }           
+                
+            });
         }
         buildStage();       
         
